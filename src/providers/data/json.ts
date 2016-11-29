@@ -3,11 +3,21 @@ import { BrowserXhr } from '@angular/http';
 import { ConfigBase } from '../config-base';
 
 @Injectable()
-export class Json extends ConfigBase {
+export class JsonData extends ConfigBase {
 
-  constructor(file: string, xhr: BrowserXhr) {
-    super();
-    this.setData(this.load(file, xhr));
+  constructor(file: string, xhr: BrowserXhr, env?: string) {
+    super(env);
+    let data = this.load(file, xhr);
+
+    if (Array.isArray(data)) {
+      throw new Error(`Data type 'array' to config invalid`);
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new Error('Config is required');
+    }
+
+    this.data = data;
   }
 
   load(file: string, xhr: BrowserXhr): any {
@@ -20,12 +30,12 @@ export class Json extends ConfigBase {
       try {
         data = JSON.parse(_xhr.responseText);
       } catch (err) {
-        throw 'Sintaxe erro no arquivo' + file + ' error: ' + err.message;
+        throw new Error(`Syntax error '${file}' error: ${err.message}`);
       }
     });
 
     _xhr.addEventListener('error', () => {
-      throw 'Arquivo de configuração inexistente ' + file;
+      throw new Error(`Problem to access '${file}'`);
     });
 
     _xhr.send();
